@@ -1,0 +1,191 @@
+syntax = "proto3";
+
+option go_package = "ilija/talas/backend/pb";
+
+message LoginUserRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginUserResponse {
+  string token = 1;
+  int64 userID = 2;
+  int32 status = 3; // 0 - success, 1 - invalid combination
+}
+
+message RegisterUserRequest {
+  string name = 1;
+  string email = 2;
+  string password = 3;
+  string location = 4;
+}
+
+message RegisterUserResponse {
+  string token = 1;
+  int64 userID = 2;
+  int32 status = 3; // 0 - success, else fail
+}
+
+message UserInfoRequest {
+  string token = 1;
+  int64 userID = 2;
+}
+
+message User {
+  string name = 1;
+  string location = 2;
+  string profilePicture = 3;
+  string email = 4;
+  int64 userID = 5;
+}
+
+message Action {
+  int32 type = 1;
+  string param = 2;
+}
+
+message EditProfilePictureRequest {
+  string token = 1;
+  bytes image = 2;
+}
+
+message EditProfileInfoRequest {
+  string token = 1;
+  optional string name = 2;
+  optional string email = 3;
+  optional string password = 4;
+  optional string location = 5;
+}
+
+message Community {
+  int64 communityID = 1;
+  string name = 2;
+  string location = 3;
+  int64 numMembers = 4;
+  string icon = 5;
+  string description = 6;
+  bool isAdmin = 7;
+  bool isMember = 8;
+}
+
+message CreateCommunityRequest {
+  string name = 1;
+  string location = 2;
+  string description = 3;
+  string token = 4;
+}
+
+message EditCommunityRequest {
+  string token = 1;
+  int64 communityID = 2;
+  optional string name = 3;
+  optional string location = 4;
+  optional string description = 5;
+}
+
+message EditCommunityIconRequest {
+  string token = 1;
+  int64 communityID = 2;
+  bytes icon = 3;
+}
+
+message JoinLeaveCommunityRequest {
+  string token = 1;
+  int64 communityID = 2;
+}
+
+message SearchCommunityRequest {
+  optional string name = 1;
+  optional string location = 2;
+  string token = 3;
+}
+
+message CreateEventRequest {
+  string token = 1;
+  int64 communityID = 2;
+  string title = 3;
+  int64 time = 4;
+  string location = 5;
+  string description = 6;
+  int64 maxParticipants = 7;
+}
+
+message Event {
+  int64 eventID = 1;
+  string title = 2;
+  int64 time = 3;
+  int64 publishedTime = 4;
+  string location = 5;
+  string description = 6;
+  int64 participants = 7;
+  int64 maxParticipants = 8;
+  User creatorInfo = 9;
+  bool joined = 10;
+  Community communityInfo = 11;
+}
+
+message InteractWithEventRequest {
+  string token = 1;
+  int32 action = 2; // 0 - join, 1 - leave
+  int64 eventID = 3;
+}
+
+message DeleteEventRequest {
+  string token = 1;
+  int64 eventID = 2;
+}
+
+message GetEventParticipantsRequest {
+  string token = 1;
+  int64 eventID = 2;
+}
+
+message GetCommunityEventsRequest {
+  string token = 1;
+  int64 communityID = 2;
+}
+
+message StringMessage {
+  string val = 1;
+}
+
+message Int64Message {
+  int64 val = 1;
+}
+
+service TalasService {
+  // User endpoints
+  rpc LoginUser (LoginUserRequest) returns (LoginUserResponse) {}
+  rpc RegisterUser (RegisterUserRequest) returns (RegisterUserResponse) {}
+  //rpc DeleteUser (StringMessage) returns (StringMessage) {} // token, error
+
+  // Profile details
+  rpc GetUserInfo (UserInfoRequest) returns (User) {}
+  //rpc GetNotifications (StringMessage) returns (stream Event) {} // StringMessage: token
+  //rpc GetActionLog (Int64Message) returns (stream Action) {} // Int64Message: userID, actions: joined/left community, published event, joined/left event
+  rpc EditProfilePicture (EditProfilePictureRequest) returns (Int64Message) {} // Int64Message: status
+  rpc EditProfileInfo (EditProfileInfoRequest) returns (Int64Message) {} // Int64Message: status
+
+  // Communities
+  rpc GetCommunityInfo (Int64Message) returns (Community) {} // Int64Message: community id
+
+  rpc EditCommunityInfo (EditCommunityRequest) returns (Int64Message) {} // Int64Message: status
+  rpc EditCommunityIcon (EditCommunityIconRequest) returns (Int64Message) {} // Int64Message: status
+
+  rpc JoinCommunity (JoinLeaveCommunityRequest) returns (Int64Message) {} // Int64Message: status
+  rpc LeaveCommunity (JoinLeaveCommunityRequest) returns (Int64Message) {} // Int64Message: status
+
+  rpc GetCommunities (Int64Message) returns (stream Community) {} // Int64Message: user ID
+
+  rpc SearchCommunities (SearchCommunityRequest) returns (stream Community) {}
+  rpc CreateCommunity (CreateCommunityRequest) returns (Int64Message) {}
+
+  // Events
+  rpc CreateEvent (CreateEventRequest) returns (Int64Message) {} // Int64Message: Event ID
+  //rpc GetEventInfo (Int64Message) returns (Event) {} // Int64Message: Event ID
+  rpc GetEventParticipants (GetEventParticipantsRequest) returns (stream User) {}
+  rpc GetJoinedEvents (StringMessage) returns (stream Event) {} // StringMessage: token
+  rpc GetCommunityEvents (GetCommunityEventsRequest) returns (stream Event) {}
+  rpc InteractWithEvent (InteractWithEventRequest) returns (Int64Message) {} // Int64Message: error
+  rpc DeleteEvent (DeleteEventRequest) returns (Int64Message) {} // Int64Message: Event ID
+}
